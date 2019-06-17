@@ -1,5 +1,5 @@
 FROM ubuntu:18.04
-MAINTAINER Benjamin Brandt <benjamin.brandt@startnext.com>
+MAINTAINER Benjamin Brandt <benjamin.brandt@tyclipso.net>
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -48,8 +48,17 @@ RUN echo "$(curl -sS https://composer.github.io/installer.sig) -" > composer-set
 # Copy PHP config
 COPY etc/ /etc/
 
-# Copy Sourceguardian
-COPY ext /usr/local/sourceguardian
+# Install Sourceguardian
+RUN mkdir /tmp/sourceguardian && \
+    cd /tmp/sourceguardian && \
+    wget https://www.sourceguardian.com/loaders/download/loaders.linux-x86_64.tar.gz && \
+    tar xvf loaders.linux-x86_64.tar.gz && \
+    cd `php -i | grep extension_dir | cut -d' ' -f 5` && \
+    cp /tmp/sourceguardian/ixed.7.2.lin . && \
+    echo zend_extension=ixed.7.2.lin > /etc/php/7.2/mods-available/sourceguardian.ini && \
+    rm -rf /tmp/sourceguardian/ \
+    && phpenmod \
+        sourceguardian
 
 RUN ln -s /etc/php/7.2/mods-available/myty_php_cli.ini /etc/php/7.2/fpm/myty_php_cli.ini  \
     && ln -s /etc/php/7.2/mods-available/myty_php_fpm.ini /etc/php/7.2/fpm/myty_php_fpm.ini \
@@ -57,8 +66,7 @@ RUN ln -s /etc/php/7.2/mods-available/myty_php_cli.ini /etc/php/7.2/fpm/myty_php
     && phpdismod\
         memcached \
     && phpenmod \
-        myty \
-        sourceguardian
+        myty 
 
 WORKDIR /var/www/web
 
